@@ -1,24 +1,32 @@
 package com.ahkoklol
 
 import cats.effect.{ExitCode, IO, IOApp}
-import sttp.tapir.server.netty.cats.NettyCatsServer
+import com.comcast.ip4s.{Host, Port, port}
+import org.http4s.ember.server.EmberServerBuilder
+import org.http4s.server.Router
+import sttp.tapir.server.http4s.Http4sServerInterpreter
 
 object Main extends IOApp:
-  val port = sys.env.get("HTTP_PORT").flatMap(_.toIntOption).getOrElse(8080)
 
   override def run(args: List[String]): IO[ExitCode] =
 
-    NettyCatsServer
-      .io()
+    val routes = Http4sServerInterpreter[IO]().toRoutes(Endpoints.all)
+
+    val port = sys.env
+      .get("HTTP_PORT")
+      .flatMap(_.toIntOption)
+      .flatMap(Port.fromInt)
+      .getOrElse(port"8080")
+
+    EmberServerBuilder
+      .default[IO]
+      .withHost(Host.fromString("localhost").get)
+      .withPort(port)
+      .withHttpApp(Router("/" -> routes).orNotFound)
+      .build
       .use: server =>
         for
-          bind <- server
-            .port(port)
-            .host("localhost")
-            .addEndpoints(Endpoints.all)
-            .start()
-          _ <- IO.println(s"Go to http://localhost:${bind.port}/docs to open SwaggerUI. Press ENTER key to exit.")
+          _ <- IO.println(s"Go to http://localhost:${server.address.getPort}/docs to open SwaggerUI. Press ENTER key to exit.")
           _ <- IO.readLine
-          _ <- bind.stop()
-        yield bind
+        yield ()
       .as(ExitCode.Success)

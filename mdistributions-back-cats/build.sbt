@@ -6,10 +6,9 @@ lazy val rootProject = (project in file(".")).settings(
     version := "0.1.0-SNAPSHOT",
     organization := "com.ahkoklol",
     scalaVersion := "3.7.3",
-    Global / semanticdbEnabled := true,
     libraryDependencies ++= Seq(
-      "com.softwaremill.sttp.tapir" %% "tapir-cats-effect" % tapirVersion,
-      "com.softwaremill.sttp.tapir" %% "tapir-netty-server-cats" % tapirVersion,
+      "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % tapirVersion,
+      "org.http4s" %% "http4s-ember-server" % "0.23.30",
       "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % tapirVersion,
       "ch.qos.logback" % "logback-classic" % "1.5.18",
       "com.softwaremill.sttp.tapir" %% "tapir-sttp-stub-server" % tapirVersion % Test,
