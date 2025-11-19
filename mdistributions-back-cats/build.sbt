@@ -1,4 +1,5 @@
 val tapirVersion = "1.11.50"
+val doobieVersion = "1.0.0-RC5"
 
 lazy val rootProject = (project in file(".")).settings(
   Seq(
@@ -6,13 +7,17 @@ lazy val rootProject = (project in file(".")).settings(
     version := "0.1.0-SNAPSHOT",
     organization := "com.ahkoklol",
     scalaVersion := "3.7.3",
+    Global / semanticdbEnabled := true,
     libraryDependencies ++= Seq(
       "com.softwaremill.sttp.tapir" %% "tapir-http4s-server" % tapirVersion,
       "org.http4s" %% "http4s-ember-server" % "0.23.30",
       "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % tapirVersion,
       "ch.qos.logback" % "logback-classic" % "1.5.18",
       "com.softwaremill.sttp.tapir" %% "tapir-sttp-stub-server" % tapirVersion % Test,
-      "org.scalatest" %% "scalatest" % "3.2.19" % Test
+      "org.scalatest" %% "scalatest" % "3.2.19" % Test,
+      "org.tpolecat" %% "doobie-core"      % doobieVersion,
+      "org.tpolecat" %% "doobie-hikari"    % doobieVersion,
+      "org.tpolecat" %% "doobie-postgres"  % doobieVersion,
     )
   )
 )
