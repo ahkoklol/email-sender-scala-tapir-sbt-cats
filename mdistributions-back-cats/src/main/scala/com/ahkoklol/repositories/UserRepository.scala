@@ -12,6 +12,7 @@ trait UserRepository:
   def findByEmail(email: String): IO[Option[User]] // Returns Some(user) if found, None if not found
   def update(user: User): IO[Option[User]] // Returns Some(user) if found & updated, None if not found
   def delete(userId: UUID): IO[Boolean] // Returns true if deleted, false if user didn't exist
+  def findById(id: java.util.UUID): IO[Option[User]] // Returns Some(user) if found, None if not found
 
 object UserRepository:
   def make(xa: Transactor[IO]): UserRepository = new UserRepository:
@@ -54,3 +55,7 @@ object UserRepository:
         DELETE FROM users
         WHERE id = $userId
       """.update.run.transact(xa).map(affectedRows => affectedRows > 0)
+
+    override def findById(id: java.util.UUID): IO[Option[User]] =
+        sql"SELECT id, password_hash, first_name, last_name, email, customer_data_sheet_url FROM users WHERE id = $id"
+        .query[User].option.transact(xa)

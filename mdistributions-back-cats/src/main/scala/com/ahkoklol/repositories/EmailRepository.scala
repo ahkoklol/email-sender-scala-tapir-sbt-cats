@@ -8,12 +8,12 @@ import doobie.postgres.implicits.*
 import java.util.UUID
 
 trait EmailRepository:
-  def create(email: Email): IO[Email]
-  def findById(id: UUID): IO[Option[Email]]
-  def findAllByUser(userId: UUID): IO[List[Email]]
-  def findPending: IO[List[Email]]
-  def update(email: Email): IO[Option[Email]]
-  def delete(id: UUID): IO[Boolean]
+  def create(email: Email): IO[Email] // Returns the created email
+  def findById(id: UUID): IO[Option[Email]] // Returns Some(email) if found, None if not found
+  def findAllByUser(userId: UUID): IO[List[Email]] // Returns all emails for a given user
+  def findPending: IO[List[Email]] // Returns all pending emails (not sent, no error)
+  def update(email: Email): IO[Option[Email]] // Returns Some(email) if found & updated, None if not found
+  def delete(id: UUID): IO[Boolean] // Returns true if deleted, false if email didn't exist
 
 object EmailRepository:
   def make(xa: Transactor[IO]): EmailRepository = new EmailRepository:

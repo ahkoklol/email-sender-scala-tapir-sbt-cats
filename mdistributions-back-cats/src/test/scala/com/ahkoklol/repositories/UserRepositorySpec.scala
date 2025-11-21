@@ -67,4 +67,17 @@ class UserRepositorySpec extends IntegrationSpec {
   it should "return false when deleting a non-existent user" in {
     repo.delete(UUID.randomUUID()).unwrap shouldBe false
   }
+
+  it should "find a user by ID" in {
+    val user = randomUser()
+    repo.create(user).unwrap
+    val fetched = repo.findById(user.id).unwrap
+    fetched shouldBe Some(user)
+  }
+
+  it should "return None when finding a non-existent ID" in {
+    val nonExistentId = UUID.randomUUID()
+    val fetched = repo.findById(nonExistentId).unwrap
+    fetched shouldBe None
+  }
 }
