@@ -207,6 +207,49 @@ $env:SMTP_PASS="your-app-password"
 
 -----
 
+## 📖 Usage Guide (Testing with Swagger)
+
+Since there is no frontend yet, you can test the full email campaign flow directly via the Swagger UI.
+
+### 1\. Register a User
+
+1.  Expand the **`POST /users/register`** endpoint.
+2.  Click **Try it out**.
+3.  Enter a valid JSON body (e.g., `{"email": "test@test.com", "password": "password", "firstName": "John"}`).
+4.  Click **Execute**. You should receive a `201 Created` response.
+
+### 2\. Login & Get Token
+
+1.  Expand the **`POST /users/login`** endpoint.
+2.  Click **Try it out**.
+3.  Enter the email and password you just registered.
+4.  Click **Execute**.
+5.  In the response body, **copy the `token` string** (without the quotes).
+
+### 3\. Authorize
+
+1.  Scroll to the very top of the Swagger page.
+2.  Click the **Authorize** button.
+3.  Paste your token into the value box (e.g., `eyJhbGci...`).
+4.  Click **Authorize**, then **Close**.
+
+### 4\. Send an Email Campaign
+
+1.  Prepare a simple Excel file (`.xlsx`) with email addresses in the **first column**.
+2.  Expand the **`POST /emails`** endpoint.
+3.  Click **Try it out**.
+4.  Fill in the `subject` and `body`.
+5.  Upload your Excel file in the `file` field.
+6.  Click **Execute**.
+
+### 5\. Check Inbox
+
+The background worker runs every **10 seconds**.
+
+1.  **Wait** a few moments.
+2.  Check the inbox of the recipient email addresses (or your LocalStack logs if running locally).
+
+
 ## 🧪 Testing
 
 This project uses **TestContainers** to run integration tests against a real, ephemeral PostgreSQL database inside Docker.
