@@ -32,7 +32,8 @@ lazy val rootProject = (project in file(".")).settings(
       "org.flywaydb" % "flyway-core"                % flywayVersion,
       "org.flywaydb" % "flyway-database-postgresql" % flywayVersion,
       "org.apache.poi" % "poi-ooxml" % "5.2.5",
-      "com.github.tototoshi" %% "scala-csv" % "1.3.10"
+      "com.github.tototoshi" %% "scala-csv" % "1.3.10",
+      "io.github.cdimascio" % "java-dotenv" % "5.2.2",
     )
   )
 )

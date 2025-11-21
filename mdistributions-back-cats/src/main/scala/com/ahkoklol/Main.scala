@@ -12,12 +12,18 @@ import org.flywaydb.core.Flyway
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.Router
 import sttp.tapir.server.http4s.Http4sServerInterpreter
+import io.github.cdimascio.dotenv.Dotenv
 
 object Main extends IOApp:
 
   override def run(args: List[String]): IO[ExitCode] =
+    val dotenv = Dotenv.configure().directory("./").ignoreIfMissing().load()
+    dotenv.entries().forEach { entry =>
+      System.setProperty(entry.getKey, entry.getValue)
+    }
     val config = AppConfig.load
-    
+    println(s"DEBUG: SMTP User is '${config.smtp.user}'")
+
     // --- 2. Run Database Migrations (Flyway) ---
     val flyway = Flyway.configure()
       .dataSource(
