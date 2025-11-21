@@ -21,13 +21,11 @@ object Endpoints:
 
   // --- Base Endpoints ---
 
-  // 1. Public Endpoint (Used for Login/Register)
   val publicEndpoint = endpoint.errorOut(jsonBody[ApiError])
 
-  // 2. Secure Endpoint Factory
-  // This extracts the "Authorization: Bearer <token>" header
-  // It validates the token using JwtService and returns the UserId (UUID) to the logic
-  def secureEndpoint(jwtService: JwtService): Endpoint[String, Unit, ApiError, UUID, Any] = 
+  // FIXED: Removed explicit type annotation ": Endpoint[...]"
+  // serverSecurityLogic returns a PartialServerEndpoint, which Scala will now infer correctly.
+  def secureEndpoint(jwtService: JwtService) = 
     publicEndpoint
       .securityIn(auth.bearer[String]())
       .errorOut(statusCode(sttp.model.StatusCode.Unauthorized))
@@ -59,7 +57,6 @@ object Endpoints:
       .serverLogic { req =>
         userService.login(req.email, req.password).map {
           case Right(user) =>
-            // Generate a fresh JWT token for the user
             val token = jwtService.generateToken(user.id)
             Right(LoginResponse(token, user))
           case Left(e) =>
@@ -72,7 +69,7 @@ object Endpoints:
 
   def makeEmailEndpoints(emailService: EmailService, jwtService: JwtService): List[ServerEndpoint[Any, IO]] = List(
     
-    // POST /emails - Create a new campaign
+    // POST /emails
     secureEndpoint(jwtService).post.in("emails")
       .in(jsonBody[CreateEmailRequest])
       .out(jsonBody[Email])
@@ -80,21 +77,21 @@ object Endpoints:
         emailService.create(userId, req.subject, req.body).map(Right(_))
       },
 
-    // GET /emails - List all campaigns
+    // GET /emails
     secureEndpoint(jwtService).get.in("emails")
       .out(jsonBody[List[Email]])
       .serverLogic { userId => _ =>
         emailService.findAll(userId).map(Right(_))
       },
 
-    // GET /emails/{id} - Get details of one campaign
+    // GET /emails/{id}
     secureEndpoint(jwtService).get.in("emails" / path[UUID]("emailId"))
       .out(jsonBody[Email])
       .serverLogic { userId => emailId =>
         emailService.find(userId, emailId).map(_.left.map(ApiError.fromEmailError(_)._2))
       },
 
-    // DELETE /emails/{id} - Delete a campaign
+    // DELETE /emails/{id}
     secureEndpoint(jwtService).delete.in("emails" / path[UUID]("emailId"))
       .out(statusCode(sttp.model.StatusCode.NoContent))
       .serverLogic { userId => emailId =>

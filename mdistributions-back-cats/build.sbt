@@ -1,5 +1,6 @@
 val tapirVersion = "1.11.50"
 val doobieVersion = "1.0.0-RC5"
+val flywayVersion = "10.10.0"
 
 lazy val rootProject = (project in file(".")).settings(
   Seq(
@@ -28,6 +29,8 @@ lazy val rootProject = (project in file(".")).settings(
       "com.sun.mail" % "javax.mail" % "1.6.2",
       "com.github.pureconfig" %% "pureconfig-core" % "0.17.4",
       "com.github.jwt-scala" %% "jwt-circe" % "9.4.5",
+      "org.flywaydb" % "flyway-core"                % flywayVersion,
+      "org.flywaydb" % "flyway-database-postgresql" % flywayVersion,
     )
   )
 )
