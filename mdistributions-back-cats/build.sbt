@@ -26,7 +26,8 @@ lazy val rootProject = (project in file(".")).settings(
       "com.google.apis" % "google-api-services-sheets" % "v4-rev20220927-2.0.0",
       "com.google.auth" % "google-auth-library-oauth2-http" % "1.19.0",
       "com.sun.mail" % "javax.mail" % "1.6.2",
-      "com.github.pureconfig" %% "pureconfig-core" % "0.17.4"
+      "com.github.pureconfig" %% "pureconfig-core" % "0.17.4",
+      "com.github.jwt-scala" %% "jwt-circe" % "9.4.5",
     )
   )
 )

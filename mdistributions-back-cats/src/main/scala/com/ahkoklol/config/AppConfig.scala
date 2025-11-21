@@ -12,6 +12,7 @@ case class SmtpConfig(
 
 case class AppConfig(
     smtp: SmtpConfig,
+    jwtSecret: String,
     //db config here
 ) derives ConfigReader
 
