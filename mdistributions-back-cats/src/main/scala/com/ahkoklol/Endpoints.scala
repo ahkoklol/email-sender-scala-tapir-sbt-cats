@@ -77,7 +77,9 @@ object Endpoints:
       .in(multipartBody[CreateEmailForm])
       .out(jsonBody[Email])
       .serverLogic { userId => form =>
-        emailService.create(userId, form.subject, form.body, form.file.body).map(Right(_))
+        val filename = form.file.fileName.getOrElse("unknown.xlsx")
+        emailService.create(userId, form.subject, form.body, form.file.body, filename)
+          .map(Right(_))
       },
 
     secureEndpoint(jwtService).get.in("emails")

@@ -53,8 +53,8 @@ class EmailServiceSpec extends IntegrationSpec {
     val recipients = List("alice@test.com", "bob@test.com", "charlie@test.com")
     val excelFile = createTempExcel(recipients)
 
-    // Action
-    val email = emailService.create(userId, subject, body, excelFile).unwrap
+    // Action: Passed excelFile.getName as the new 'filename' argument
+    val email = emailService.create(userId, subject, body, excelFile, excelFile.getName).unwrap
 
     // Assertions
     email.userId shouldBe userId
@@ -71,8 +71,9 @@ class EmailServiceSpec extends IntegrationSpec {
     val userId = createUser()
     val file = createTempExcel(List("a@a.com"))
     
-    emailService.create(userId, "Subj 1", "Body 1", file).unwrap
-    emailService.create(userId, "Subj 2", "Body 2", file).unwrap
+    // Action: Passed file.getName
+    emailService.create(userId, "Subj 1", "Body 1", file, file.getName).unwrap
+    emailService.create(userId, "Subj 2", "Body 2", file, file.getName).unwrap
 
     val list = emailService.findAll(userId).unwrap
     list should have size 2
@@ -83,8 +84,8 @@ class EmailServiceSpec extends IntegrationSpec {
     val bobId = createUser()
     val file = createTempExcel(List("secret@test.com"))
 
-    // Alice creates an email
-    val aliceEmail = emailService.create(aliceId, "Secret", "Body", file).unwrap
+    // Action: Passed file.getName
+    val aliceEmail = emailService.create(aliceId, "Secret", "Body", file, file.getName).unwrap
 
     // Bob tries to read it
     val result = emailService.find(bobId, aliceEmail.id).unwrap
@@ -100,7 +101,8 @@ class EmailServiceSpec extends IntegrationSpec {
   it should "delete an email only if owned by user" in {
     val userId = createUser()
     val file = createTempExcel(List("delete@me.com"))
-    val email = emailService.create(userId, "To Delete", "Body", file).unwrap
+    // Action: Passed file.getName
+    val email = emailService.create(userId, "To Delete", "Body", file, file.getName).unwrap
 
     // Success case
     emailService.delete(userId, email.id).unwrap shouldBe Right(())

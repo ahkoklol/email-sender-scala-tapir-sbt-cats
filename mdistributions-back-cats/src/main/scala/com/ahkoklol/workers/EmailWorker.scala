@@ -32,6 +32,7 @@ object EmailWorker:
       _ <- email.recipients.traverse { recipient =>
         mailer.send(recipient, email.subject, email.body)
           .handleErrorWith(e => IO.println(s"Failed to send to $recipient: ${e.getMessage}"))
+          .flatMap(_ => IO.sleep(2.seconds))
       }
 
       // 2. Mark as Sent
