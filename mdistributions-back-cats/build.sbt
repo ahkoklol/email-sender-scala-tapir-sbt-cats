@@ -19,7 +19,9 @@ lazy val rootProject = (project in file(".")).settings(
       "org.tpolecat" %% "doobie-hikari"    % doobieVersion,
       "org.tpolecat" %% "doobie-postgres"  % doobieVersion,
       "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % tapirVersion,
-      "com.github.pureconfig" %% "pureconfig-core" % "0.17.6"
+      "com.github.pureconfig" %% "pureconfig-core" % "0.17.6",
+      "com.dimafeng" %% "testcontainers-scala-scalatest" % "0.41.0" % Test,
+      "com.dimafeng" %% "testcontainers-scala-postgresql" % "0.41.0" % Test
     )
   )
 )

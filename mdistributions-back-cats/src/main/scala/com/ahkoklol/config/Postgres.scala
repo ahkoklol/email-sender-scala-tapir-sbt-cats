@@ -8,7 +8,7 @@ import doobie.implicits.*
 object Postgres:
   def makeTransactor(
     driver: String = "org.postgresql.Driver",
-    url: String = "jdbc:postgresql://localhost:5432/mdistributions",
+    url: String = "jdbc:postgresql://localhost:5433/mdistributions",
     user: String = "postgres",
     pass: String = "password"
   ): Resource[IO, Transactor[IO]] =
