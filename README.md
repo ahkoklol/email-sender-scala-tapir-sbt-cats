@@ -1,6 +1,3 @@
-Here is the updated `README.md` with the requested sections on **Google SMTP configuration** (including the video) and detailed instructions for setting **environment variables** across different operating systems.
-
-````markdown
 # mdistributions - Marketing Email Sender
 
 A robust backend service built with **Scala 3**, **Cats Effect**, and **Tapir** for managing marketing email campaigns. This application allows users to register, upload recipient lists via Excel, and orchestrate email sending via SMTP.
