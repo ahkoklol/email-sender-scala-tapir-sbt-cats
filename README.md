@@ -2,7 +2,7 @@
 
 A robust backend service built with **Scala 3**, **Cats Effect**, and **Tapir** for managing marketing email campaigns. This application allows users to register, upload recipient lists via Excel, and orchestrate email sending via SMTP.
 
-As of now, this project is a work in progress and serves as a learning exercise in building functional Scala applications with modern libraries and best practices. A frontend interface will soon come to complement this backend service.
+As of now, this project is a work in progress and serves as a learning exercise in building functional Scala applications with modern libraries and best practices. A frontend interface will soon come to complement this backend service. Here is a model of the future user interface: https://www.figma.com/make/a67ZhUWiuiqFySo0JNPPDp/Marketing-Email-Sender-App?node-id=0-4&t=NJSRWCMn2uJo1Ra0-1
 
 ## 🏗 Architecture
 
