@@ -11,12 +11,12 @@ The application follows a clean, functional architecture separating the HTTP API
 ```mermaid
 graph TD
     subgraph "Client Layer"
-        User[User / Browser]
+        User["User / Browser"]
         Swagger[Swagger UI]
     end
 
     subgraph "Application Server (Scala 3 + Cats Effect)"
-        API[HTTP API (Tapir/Http4s)]
+        API["HTTP API (Tapir/Http4s)"]
         
         subgraph "Services"
             Auth[JwtService]
@@ -25,7 +25,7 @@ graph TD
         end
 
         subgraph "Background Process"
-            Worker[EmailWorker (FS2 Stream)]
+            Worker["EmailWorker (FS2 Stream)"]
         end
 
         subgraph "Data Access"
@@ -38,7 +38,7 @@ graph TD
 
     subgraph "Infrastructure (Docker)"
         DB[(PostgreSQL)]
-        SMTP[SMTP Server (Gmail / LocalStack)]
+        SMTP["SMTP Server (Gmail / LocalStack)"]
     end
 
     User -->|HTTP Requests| API
@@ -97,7 +97,7 @@ Follow these steps to get the application running from scratch.
 ### 2\. Clone the Repository
 
 ```bash
-git clone [https://github.com/ahkoklol/email-sender-scala-tapir-sbt-cats.git](https://github.com/ahkoklol/email-sender-scala-tapir-sbt-cats.git)
+git clone https://github.com/ahkoklol/email-sender-scala-tapir-sbt-cats.git
 cd mdistributions-back-cats
 ```
 
@@ -237,9 +237,3 @@ src/main/scala/com/ahkoklol
 ## 📝 License
 
 MIT License - Copyright (c) 2025 Wayne WAN CHOW WAH
-
-```
-
-
-http://googleusercontent.com/youtube_content/0
-```
