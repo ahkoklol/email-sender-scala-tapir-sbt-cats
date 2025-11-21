@@ -1,0 +1,24 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: mdistributions-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mdistributions
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mdistributions-network
+
+networks:
+  mdistributions-network:
+    driver: bridge
+    
