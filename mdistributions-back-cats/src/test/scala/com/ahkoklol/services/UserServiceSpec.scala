@@ -72,7 +72,6 @@ class UserServiceSpec extends IntegrationSpec {
   }
 
   it should "fail to update a non-existent user" in {
-    // FIXED: Removed createdAt and updatedAt to match your model
     val fakeUser = User(
       id = UUID.randomUUID(),
       passwordHash = "hash",
