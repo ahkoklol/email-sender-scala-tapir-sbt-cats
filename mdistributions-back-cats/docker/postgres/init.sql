@@ -14,5 +14,6 @@ CREATE TABLE emails (
     body TEXT NOT NULL,
     created_at TIMESTAMP NOT NULL,
     sent_at TIMESTAMP,
-    error_message TEXT
+    error_message TEXT,
+    recipients TEXT[] NOT NULL default {}
 );

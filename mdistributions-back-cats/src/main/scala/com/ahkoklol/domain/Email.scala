@@ -10,5 +10,6 @@ case class Email(
     body: String,
     createdAt: Instant,
     sentAt: Option[Instant],
-    errorMessage: Option[String]
+    errorMessage: Option[String],
+    recipients: List[String]
 )

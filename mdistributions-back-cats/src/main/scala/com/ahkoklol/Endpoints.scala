@@ -10,21 +10,21 @@ import sttp.tapir.json.circe.*
 import sttp.tapir.server.ServerEndpoint
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 import java.util.UUID
+import sttp.model.Part
+import sttp.tapir.TapirFile
 
 object Endpoints:
 
-  // --- DTOs (Data Transfer Objects) ---
+  // --- DTOs ---
   case class RegisterRequest(email: String, password: String, firstName: Option[String], lastName: Option[String])
   case class LoginRequest(email: String, password: String)
-  case class CreateEmailRequest(subject: String, body: String)
   case class LoginResponse(token: String, user: User)
+  case class CreateEmailForm(subject: String, body: String, file: Part[TapirFile])
 
   // --- Base Endpoints ---
 
   val publicEndpoint = endpoint.errorOut(jsonBody[ApiError])
 
-  // FIXED: Removed explicit type annotation ": Endpoint[...]"
-  // serverSecurityLogic returns a PartialServerEndpoint, which Scala will now infer correctly.
   def secureEndpoint(jwtService: JwtService) = 
     publicEndpoint
       .securityIn(auth.bearer[String]())
@@ -40,17 +40,15 @@ object Endpoints:
 
   def makeUserEndpoints(userService: UserService, jwtService: JwtService): List[ServerEndpoint[Any, IO]] = List(
     
-    // POST /users/register
     publicEndpoint.post.in("users" / "register")
       .in(jsonBody[RegisterRequest])
       .out(jsonBody[User])
       .out(statusCode(sttp.model.StatusCode.Created))
       .serverLogic { req =>
         userService.register(req.email, req.password, req.firstName, req.lastName)
-          .map(_.left.map(ApiError.fromUserError(_)._2))
+          .map(_.left.map(e => ApiError.fromUserError(e)._2))
       },
 
-    // POST /users/login
     publicEndpoint.post.in("users" / "login")
       .in(jsonBody[LoginRequest])
       .out(jsonBody[LoginResponse])
@@ -69,33 +67,31 @@ object Endpoints:
 
   def makeEmailEndpoints(emailService: EmailService, jwtService: JwtService): List[ServerEndpoint[Any, IO]] = List(
     
-    // POST /emails
+    // POST /emails - CHANGED to accept Multipart Form
     secureEndpoint(jwtService).post.in("emails")
-      .in(jsonBody[CreateEmailRequest])
+      .in(multipartBody[CreateEmailForm]) // <--- Used here
       .out(jsonBody[Email])
-      .serverLogic { userId => req =>
-        emailService.create(userId, req.subject, req.body).map(Right(_))
+      .serverLogic { userId => form =>
+        // Extract the file from the form part
+        emailService.create(userId, form.subject, form.body, form.file.body).map(Right(_))
       },
 
-    // GET /emails
     secureEndpoint(jwtService).get.in("emails")
       .out(jsonBody[List[Email]])
       .serverLogic { userId => _ =>
         emailService.findAll(userId).map(Right(_))
       },
 
-    // GET /emails/{id}
     secureEndpoint(jwtService).get.in("emails" / path[UUID]("emailId"))
       .out(jsonBody[Email])
       .serverLogic { userId => emailId =>
-        emailService.find(userId, emailId).map(_.left.map(ApiError.fromEmailError(_)._2))
+        emailService.find(userId, emailId).map(_.left.map(e => ApiError.fromEmailError(e)._2))
       },
 
-    // DELETE /emails/{id}
     secureEndpoint(jwtService).delete.in("emails" / path[UUID]("emailId"))
       .out(statusCode(sttp.model.StatusCode.NoContent))
       .serverLogic { userId => emailId =>
-        emailService.delete(userId, emailId).map(_.left.map(ApiError.fromEmailError(_)._2))
+        emailService.delete(userId, emailId).map(_.left.map(e => ApiError.fromEmailError(e)._2))
       }
   )
 

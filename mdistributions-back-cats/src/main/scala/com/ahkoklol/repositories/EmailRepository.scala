@@ -28,20 +28,21 @@ object EmailRepository:
           ${email.body},
           ${email.createdAt},
           ${email.sentAt},
-          ${email.errorMessage}
+          ${email.errorMessage},
+          ${email.recipients},
         )
       """.update.run.transact(xa).map(_ => email)
 
     override def findById(id: UUID): IO[Option[Email]] =
       sql"""
-        SELECT id, user_id, subject, body, created_at, sent_at, error_message
+        SELECT id, user_id, subject, body, created_at, sent_at, error_message, recipients
         FROM emails
         WHERE id = $id
       """.query[Email].option.transact(xa)
 
     override def findAllByUser(userId: UUID): IO[List[Email]] =
       sql"""
-        SELECT id, user_id, subject, body, created_at, sent_at, error_message
+        SELECT id, user_id, subject, body, created_at, sent_at, error_message, recipients
         FROM emails
         WHERE user_id = $userId
         ORDER BY created_at DESC
@@ -49,7 +50,7 @@ object EmailRepository:
 
     override def findPending: IO[List[Email]] =
       sql"""
-        SELECT id, user_id, subject, body, created_at, sent_at, error_message
+        SELECT id, user_id, subject, body, created_at, sent_at, error_message, recipients
         FROM emails
         WHERE sent_at IS NULL AND error_message IS NULL
       """.query[Email].to[List].transact(xa)

@@ -3,7 +3,7 @@ package com.ahkoklol
 import cats.effect.{ExitCode, IO, IOApp}
 import com.ahkoklol.config.AppConfig
 import com.ahkoklol.config.Postgres
-import com.ahkoklol.integrations.{GoogleSheets, SmtpMailer}
+import com.ahkoklol.integrations.SmtpMailer
 import com.ahkoklol.repositories.{EmailRepository, UserRepository}
 import com.ahkoklol.services.{EmailService, JwtService, UserService}
 import com.ahkoklol.workers.EmailWorker
@@ -36,42 +36,37 @@ object Main extends IOApp:
       pass = "password"
     ).use { xa =>
       
+      // --- INITIALIZATION (Pure Code - No IO) ---
+      // Move these OUTSIDE the for-comprehension
+      val mailer     = SmtpMailer.make(config.smtp)
+      val jwtService = new JwtService(config.jwtSecret)
+
+      val userRepo   = UserRepository.make(xa)
+      val emailRepo  = EmailRepository.make(xa)
+
+      val userService  = UserService.make(userRepo)
+      val emailService = EmailService.make(emailRepo)
+
+      val userEndpoints  = Endpoints.makeUserEndpoints(userService, jwtService)
+      val emailEndpoints = Endpoints.makeEmailEndpoints(emailService, jwtService)
+      val docEndpoints   = Endpoints.makeDocEndpoints(userEndpoints ++ emailEndpoints)
+      
+      val allEndpoints   = userEndpoints ++ emailEndpoints ++ docEndpoints
+
+      val routes = Http4sServerInterpreter[IO]().toRoutes(allEndpoints)
+
+      val httpPort = sys.env.get("HTTP_PORT")
+        .flatMap(_.toIntOption)
+        .flatMap(Port.fromInt)
+        .getOrElse(port"8080")
+
+      // --- EXECUTION (Effectful Code - IO) ---
+      // The for-loop handles the sequence of IO actions
       for {
-        // --- Integrations & Auth ---
-        sheets <- GoogleSheets.make("credentials.json")
-        
-        // FIXED: Split into separate lines and used '='
-        mailer = SmtpMailer.make(config.smtp)
-        jwtService = new JwtService(config.jwtSecret)
+        // 1. Start the Background Worker
+        workerFiber <- EmailWorker.start(emailRepo, mailer).start
 
-        // --- Repositories ---
-        userRepo  = UserRepository.make(xa)
-        emailRepo = EmailRepository.make(xa)
-
-        // --- Services ---
-        userService  = UserService.make(userRepo)
-        emailService = EmailService.make(emailRepo)
-
-        // --- Background Worker ---
-        workerFiber <- EmailWorker.start(emailRepo, userRepo, sheets, mailer).start
-
-        // --- HTTP Endpoints ---
-        userEndpoints  = Endpoints.makeUserEndpoints(userService, jwtService)
-        emailEndpoints = Endpoints.makeEmailEndpoints(emailService, jwtService)
-        docEndpoints   = Endpoints.makeDocEndpoints(userEndpoints ++ emailEndpoints)
-        
-        allEndpoints   = userEndpoints ++ emailEndpoints ++ docEndpoints
-
-        // --- Convert Tapir Endpoints to http4s Routes ---
-        routes = Http4sServerInterpreter[IO]().toRoutes(allEndpoints)
-
-        // --- Determine Port ---
-        httpPort = sys.env.get("HTTP_PORT")
-          .flatMap(_.toIntOption)
-          .flatMap(Port.fromInt)
-          .getOrElse(port"8080")
-
-        // --- Start Server ---
+        // 2. Start the HTTP Server
         _ <- IO.println("Worker started in background...")
         _ <- EmberServerBuilder
           .default[IO]
@@ -87,7 +82,7 @@ object Main extends IOApp:
             } yield ()
           }
         
-        // --- Cleanup ---
+        // 3. Cleanup when server stops
         _ <- workerFiber.cancel 
         
       } yield ExitCode.Success

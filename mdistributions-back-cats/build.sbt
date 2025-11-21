@@ -31,6 +31,7 @@ lazy val rootProject = (project in file(".")).settings(
       "com.github.jwt-scala" %% "jwt-circe" % "9.4.5",
       "org.flywaydb" % "flyway-core"                % flywayVersion,
       "org.flywaydb" % "flyway-database-postgresql" % flywayVersion,
+      "org.apache.poi" % "poi-ooxml" % "5.2.5",
     )
   )
 )
