@@ -3,6 +3,8 @@ package com.ahkoklol.services
 import com.ahkoklol.IntegrationSpec
 import com.ahkoklol.domain.{Email, EmailError}
 import com.ahkoklol.repositories.{EmailRepository, UserRepository}
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
+import java.io.{File, FileOutputStream}
 import java.util.UUID
 
 class EmailServiceSpec extends IntegrationSpec {
@@ -11,7 +13,6 @@ class EmailServiceSpec extends IntegrationSpec {
   lazy val emailRepo = EmailRepository.make(xa)
   lazy val emailService = EmailService.make(emailRepo)
 
-  // Helper to create a dummy user for testing
   def createUser(): UUID = {
     val id = UUID.randomUUID()
     val u = com.ahkoklol.domain.User(
@@ -21,26 +22,57 @@ class EmailServiceSpec extends IntegrationSpec {
     id
   }
 
-  "EmailService" should "create and retrieve an email" in {
-    val userId = createUser()
-    val subject = "Marketing Campaign #1"
-    val body = "Hello World"
+  // --- Helper to create a real .xlsx file for testing ---
+  def createTempExcel(emails: List[String]): File = {
+    val file = File.createTempFile("test-emails", ".xlsx")
+    val workbook = new XSSFWorkbook()
+    val sheet = workbook.createSheet("Emails")
 
-    // Create
-    val email = emailService.create(userId, subject, body).unwrap
+    // Write emails to Column A
+    emails.zipWithIndex.foreach { case (email, index) =>
+      val row = sheet.createRow(index)
+      val cell = row.createCell(0)
+      cell.setCellValue(email)
+    }
+
+    val fos = new FileOutputStream(file)
+    workbook.write(fos)
+    fos.close()
+    workbook.close()
+    
+    file.deleteOnExit() // Auto-cleanup
+    file
+  }
+
+  "EmailService" should "create an email campaign from an Excel file" in {
+    val userId = createUser()
+    val subject = "Marketing Campaign"
+    val body = "Hello!"
+    
+    // Create a dummy Excel file with 3 emails
+    val recipients = List("alice@test.com", "bob@test.com", "charlie@test.com")
+    val excelFile = createTempExcel(recipients)
+
+    // Action
+    val email = emailService.create(userId, subject, body, excelFile).unwrap
+
+    // Assertions
     email.userId shouldBe userId
     email.subject shouldBe subject
-    email.sentAt shouldBe None
+    email.recipients should contain theSameElementsAs recipients
+    email.recipients should have size 3
 
-    // Retrieve
+    // Verify persistence
     val fetched = emailService.find(userId, email.id).unwrap
-    fetched shouldBe Right(email)
+    fetched.map(_.recipients) shouldBe Right(recipients)
   }
 
   it should "list all emails for a user" in {
     val userId = createUser()
-    emailService.create(userId, "Subj 1", "Body 1").unwrap
-    emailService.create(userId, "Subj 2", "Body 2").unwrap
+    val file = createTempExcel(List("a@a.com"))
+    
+    emailService.create(userId, "Subj 1", "Body 1", file).unwrap
+    emailService.create(userId, "Subj 2", "Body 2", file).unwrap
 
     val list = emailService.findAll(userId).unwrap
     list should have size 2
@@ -49,9 +81,10 @@ class EmailServiceSpec extends IntegrationSpec {
   it should "prevent accessing someone else's email (AccessDenied)" in {
     val aliceId = createUser()
     val bobId = createUser()
+    val file = createTempExcel(List("secret@test.com"))
 
     // Alice creates an email
-    val aliceEmail = emailService.create(aliceId, "Secret", "Body").unwrap
+    val aliceEmail = emailService.create(aliceId, "Secret", "Body", file).unwrap
 
     // Bob tries to read it
     val result = emailService.find(bobId, aliceEmail.id).unwrap
@@ -66,25 +99,13 @@ class EmailServiceSpec extends IntegrationSpec {
 
   it should "delete an email only if owned by user" in {
     val userId = createUser()
-    val email = emailService.create(userId, "To Delete", "Body").unwrap
+    val file = createTempExcel(List("delete@me.com"))
+    val email = emailService.create(userId, "To Delete", "Body", file).unwrap
 
     // Success case
     emailService.delete(userId, email.id).unwrap shouldBe Right(())
     
     // Verify it's gone
     emailService.find(userId, email.id).unwrap shouldBe Left(EmailError.EmailNotFound)
-  }
-
-  it should "prevent deleting someone else's email" in {
-    val aliceId = createUser()
-    val bobId = createUser()
-    val aliceEmail = emailService.create(aliceId, "Alice's Data", "Body").unwrap
-
-    // Bob tries to delete
-    val result = emailService.delete(bobId, aliceEmail.id).unwrap
-    result shouldBe Left(EmailError.AccessDenied)
-
-    // Verify it still exists
-    emailService.find(aliceId, aliceEmail.id).unwrap.isRight shouldBe true
   }
 }

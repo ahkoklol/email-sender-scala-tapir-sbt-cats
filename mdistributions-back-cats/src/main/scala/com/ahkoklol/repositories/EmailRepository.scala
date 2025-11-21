@@ -8,41 +8,41 @@ import doobie.postgres.implicits.*
 import java.util.UUID
 
 trait EmailRepository:
-  def create(email: Email): IO[Email] // Returns the created email
-  def findById(id: UUID): IO[Option[Email]] // Returns Some(email) if found, None if not found
-  def findAllByUser(userId: UUID): IO[List[Email]] // Returns all emails for a given user
-  def findPending: IO[List[Email]] // Returns all pending emails (not sent, no error)
-  def update(email: Email): IO[Option[Email]] // Returns Some(email) if found & updated, None if not found
-  def delete(id: UUID): IO[Boolean] // Returns true if deleted, false if email didn't exist
+  def create(email: Email): IO[Email]
+  def findById(id: UUID): IO[Option[Email]]
+  def findAllByUser(userId: UUID): IO[List[Email]]
+  def findPending: IO[List[Email]]
+  def update(email: Email): IO[Option[Email]]
+  def delete(id: UUID): IO[Boolean]
 
 object EmailRepository:
   def make(xa: Transactor[IO]): EmailRepository = new EmailRepository:
 
     override def create(email: Email): IO[Email] =
       sql"""
-        INSERT INTO emails (id, user_id, subject, body, created_at, sent_at, error_message)
+        INSERT INTO emails (id, user_id, subject, body, recipients, created_at, sent_at, error_message)
         VALUES (
           ${email.id},
           ${email.userId},
           ${email.subject},
           ${email.body},
+          ${email.recipients},
           ${email.createdAt},
           ${email.sentAt},
-          ${email.errorMessage},
-          ${email.recipients},
+          ${email.errorMessage}
         )
       """.update.run.transact(xa).map(_ => email)
 
     override def findById(id: UUID): IO[Option[Email]] =
       sql"""
-        SELECT id, user_id, subject, body, created_at, sent_at, error_message, recipients
+        SELECT id, user_id, subject, body, recipients, created_at, sent_at, error_message
         FROM emails
         WHERE id = $id
       """.query[Email].option.transact(xa)
 
     override def findAllByUser(userId: UUID): IO[List[Email]] =
       sql"""
-        SELECT id, user_id, subject, body, created_at, sent_at, error_message, recipients
+        SELECT id, user_id, subject, body, recipients, created_at, sent_at, error_message
         FROM emails
         WHERE user_id = $userId
         ORDER BY created_at DESC
@@ -50,18 +50,17 @@ object EmailRepository:
 
     override def findPending: IO[List[Email]] =
       sql"""
-        SELECT id, user_id, subject, body, created_at, sent_at, error_message, recipients
+        SELECT id, user_id, subject, body, recipients, created_at, sent_at, error_message
         FROM emails
         WHERE sent_at IS NULL AND error_message IS NULL
       """.query[Email].to[List].transact(xa)
-
-    // These might not be used
 
     override def update(email: Email): IO[Option[Email]] =
       sql"""
         UPDATE emails
         SET subject = ${email.subject},
             body = ${email.body},
+            recipients = ${email.recipients},
             sent_at = ${email.sentAt},
             error_message = ${email.errorMessage}
         WHERE id = ${email.id}

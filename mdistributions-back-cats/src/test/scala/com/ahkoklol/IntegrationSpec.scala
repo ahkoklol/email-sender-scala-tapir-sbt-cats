@@ -23,9 +23,8 @@ trait IntegrationSpec extends AnyFlatSpec
 
   val ddl: ConnectionIO[Unit] = 
     for {
-      _ <- sql"""CREATE EXTENSION IF NOT EXISTS "uuid-ossp"""".update.run
       _ <- sql"""
-        CREATE TABLE IF NOT EXISTS users (
+        CREATE TABLE users (
             id UUID PRIMARY KEY,
             password_hash VARCHAR(255) NOT NULL,
             first_name VARCHAR(100),
@@ -34,12 +33,14 @@ trait IntegrationSpec extends AnyFlatSpec
             customer_data_sheet_url TEXT
         )
       """.update.run
+      
       _ <- sql"""
-        CREATE TABLE IF NOT EXISTS emails (
+        CREATE TABLE emails (
             id UUID PRIMARY KEY,
             user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
             subject VARCHAR(255) NOT NULL,
             body TEXT NOT NULL,
+            recipients TEXT[] NOT NULL, -- <--- Added this column
             created_at TIMESTAMPTZ NOT NULL,
             sent_at TIMESTAMPTZ,
             error_message TEXT
@@ -59,13 +60,18 @@ trait IntegrationSpec extends AnyFlatSpec
     ).allocated.unsafeRunSync()
     
     closeTransactor = cleanup
-    ddl.transact(transactor).unsafeRunSync()
+
+    // Clean up old tables (if any) and run DDL
+    (sql"DROP TABLE IF EXISTS emails CASCADE".update.run *>
+     sql"DROP TABLE IF EXISTS users CASCADE".update.run *>
+     ddl).transact(transactor).unsafeRunSync()
+
     transactor
   }
 
   override def afterAll(): Unit = {
-    closeTransactor.unsafeRunSync()
-    super.afterAll()
+    closeTransactor.unsafeRunSync() 
+    super.afterAll()                
   }
   
   extension [A](io: IO[A]) def unwrap: A = io.unsafeRunSync()
