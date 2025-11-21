@@ -5,7 +5,7 @@ import com.ahkoklol.domain.{Email, User}
 import com.ahkoklol.integrations.SmtpMailer
 import com.ahkoklol.repositories.{EmailRepository, UserRepository}
 import cats.effect.{IO, Ref}
-import cats.implicits.* // <--- ADD THIS IMPORT
+import cats.implicits.*
 import java.util.UUID
 import java.time.Instant
 import java.time.temporal.ChronoUnit
