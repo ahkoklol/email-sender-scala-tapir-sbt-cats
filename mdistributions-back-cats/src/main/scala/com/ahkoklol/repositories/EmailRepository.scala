@@ -35,7 +35,7 @@ object EmailRepository:
 
     override def findById(id: UUID): IO[Option[Email]] =
       sql"""
-        SELECT id, user_id, subject, body, created_at, sent_at, error_message, recipients,
+        SELECT id, user_id, subject, body, created_at, sent_at, error_message, recipients
         FROM emails
         WHERE id = $id
       """.query[Email].option.transact(xa)

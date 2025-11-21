@@ -12,6 +12,7 @@ import sttp.tapir.swagger.bundle.SwaggerInterpreter
 import java.util.UUID
 import sttp.model.Part
 import sttp.tapir.TapirFile
+import sttp.model.StatusCode
 
 object Endpoints:
 
@@ -23,16 +24,19 @@ object Endpoints:
 
   // --- Base Endpoints ---
 
-  val publicEndpoint = endpoint.errorOut(jsonBody[ApiError])
+  // 1. Update: map error to (StatusCode, ApiError)
+  val publicEndpoint = endpoint.errorOut(statusCode.and(jsonBody[ApiError]))
 
   def secureEndpoint(jwtService: JwtService) = 
     publicEndpoint
       .securityIn(auth.bearer[String]())
-      .errorOut(statusCode(sttp.model.StatusCode.Unauthorized))
+      // 2. Update: Remove the explicit .errorOut(statusCode(Unauthorized)) 
+      //    because publicEndpoint now handles dynamic status codes.
       .serverSecurityLogic { token =>
         IO.pure(
           jwtService.validateToken(token)
-            .left.map(err => ApiError(err))
+            // 3. Update: Return the tuple (StatusCode, ApiError)
+            .left.map(err => (StatusCode.Unauthorized, ApiError(err)))
         )
       }
 
@@ -43,10 +47,11 @@ object Endpoints:
     publicEndpoint.post.in("users" / "register")
       .in(jsonBody[RegisterRequest])
       .out(jsonBody[User])
-      .out(statusCode(sttp.model.StatusCode.Created))
+      .out(statusCode(StatusCode.Created))
       .serverLogic { req =>
         userService.register(req.email, req.password, req.firstName, req.lastName)
-          .map(_.left.map(e => ApiError.fromUserError(e)._2))
+          // 4. Update: Remove ._2 to return the full (StatusCode, ApiError) pair
+          .map(_.left.map(e => ApiError.fromUserError(e)))
       },
 
     publicEndpoint.post.in("users" / "login")
@@ -58,7 +63,8 @@ object Endpoints:
             val token = jwtService.generateToken(user.id)
             Right(LoginResponse(token, user))
           case Left(e) =>
-            Left(ApiError.fromUserError(e)._2)
+            // 5. Update: Return the full (StatusCode, ApiError) pair
+            Left(ApiError.fromUserError(e))
         }
       }
   )
@@ -67,12 +73,10 @@ object Endpoints:
 
   def makeEmailEndpoints(emailService: EmailService, jwtService: JwtService): List[ServerEndpoint[Any, IO]] = List(
     
-    // POST /emails - CHANGED to accept Multipart Form
     secureEndpoint(jwtService).post.in("emails")
-      .in(multipartBody[CreateEmailForm]) // <--- Used here
+      .in(multipartBody[CreateEmailForm])
       .out(jsonBody[Email])
       .serverLogic { userId => form =>
-        // Extract the file from the form part
         emailService.create(userId, form.subject, form.body, form.file.body).map(Right(_))
       },
 
@@ -85,13 +89,15 @@ object Endpoints:
     secureEndpoint(jwtService).get.in("emails" / path[UUID]("emailId"))
       .out(jsonBody[Email])
       .serverLogic { userId => emailId =>
-        emailService.find(userId, emailId).map(_.left.map(e => ApiError.fromEmailError(e)._2))
+        // 6. Update: Remove ._2
+        emailService.find(userId, emailId).map(_.left.map(e => ApiError.fromEmailError(e)))
       },
 
     secureEndpoint(jwtService).delete.in("emails" / path[UUID]("emailId"))
-      .out(statusCode(sttp.model.StatusCode.NoContent))
+      .out(statusCode(StatusCode.NoContent))
       .serverLogic { userId => emailId =>
-        emailService.delete(userId, emailId).map(_.left.map(e => ApiError.fromEmailError(e)._2))
+        // 7. Update: Remove ._2
+        emailService.delete(userId, emailId).map(_.left.map(e => ApiError.fromEmailError(e)))
       }
   )
 
