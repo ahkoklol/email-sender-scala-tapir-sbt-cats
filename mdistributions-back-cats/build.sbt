@@ -21,7 +21,8 @@ lazy val rootProject = (project in file(".")).settings(
       "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % tapirVersion,
       "com.github.pureconfig" %% "pureconfig-core" % "0.17.6",
       "com.dimafeng" %% "testcontainers-scala-scalatest" % "0.41.0" % Test,
-      "com.dimafeng" %% "testcontainers-scala-postgresql" % "0.41.0" % Test
+      "com.dimafeng" %% "testcontainers-scala-postgresql" % "0.41.0" % Test,
+      "org.mindrot" % "jbcrypt" % "0.4"
     )
   )
 )

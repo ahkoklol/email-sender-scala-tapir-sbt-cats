@@ -54,6 +54,8 @@ object EmailRepository:
         WHERE sent_at IS NULL AND error_message IS NULL
       """.query[Email].to[List].transact(xa)
 
+    // These might not be used
+
     override def update(email: Email): IO[Option[Email]] =
       sql"""
         UPDATE emails
