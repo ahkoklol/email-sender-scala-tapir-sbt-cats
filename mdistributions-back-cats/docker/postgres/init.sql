@@ -1,5 +1,3 @@
-CREATE DATABASE mdistributions;
-
 \connect mdistributions
 
 CREATE TABLE users (
