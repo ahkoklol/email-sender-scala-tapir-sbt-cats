@@ -2,6 +2,7 @@ package com.ahkoklol
 
 import cats.effect.IO
 import cats.effect.unsafe.implicits.global
+import cats.implicits.*
 import com.dimafeng.testcontainers.{ForAllTestContainer, PostgreSQLContainer}
 import doobie.*
 import doobie.hikari.HikariTransactor
@@ -23,6 +24,7 @@ trait IntegrationSpec extends AnyFlatSpec
 
   val ddl: ConnectionIO[Unit] = 
     for {
+      
       _ <- sql"""
         CREATE TABLE users (
             id UUID PRIMARY KEY,
@@ -40,7 +42,7 @@ trait IntegrationSpec extends AnyFlatSpec
             user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
             subject VARCHAR(255) NOT NULL,
             body TEXT NOT NULL,
-            recipients TEXT[] NOT NULL, -- <--- Added this column
+            recipients TEXT[] NOT NULL,
             created_at TIMESTAMPTZ NOT NULL,
             sent_at TIMESTAMPTZ,
             error_message TEXT
@@ -61,7 +63,6 @@ trait IntegrationSpec extends AnyFlatSpec
     
     closeTransactor = cleanup
 
-    // Clean up old tables (if any) and run DDL
     (sql"DROP TABLE IF EXISTS emails CASCADE".update.run *>
      sql"DROP TABLE IF EXISTS users CASCADE".update.run *>
      ddl).transact(transactor).unsafeRunSync()
